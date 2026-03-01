@@ -39,7 +39,7 @@ public class Users {
     }
     @Override
     public String toString() {
-        return "student{" +
+        return "Users{" +
                 "id : " + id + 
                 ",username : " + username + "\'"  + 
                 ",password : " + password + 

@@ -1,4 +1,3 @@
-# SpringBoot-Login-API
 # 🔐 SpringBoot Login API
 
 A secure and production-ready Login & Authentication REST API built using **Spring Boot** with **BCrypt password encryption**.
