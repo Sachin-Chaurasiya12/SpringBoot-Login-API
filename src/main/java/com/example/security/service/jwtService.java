@@ -30,22 +30,26 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.example.security.model.Users;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.InvalidKeyException;
 import io.jsonwebtoken.security.Keys;
 
 @Service
-public class jwtService {
+public class JwtService {
     private static String secretKey = "";
-    public jwtService(){
+    public JwtService(){
         try {
             KeyGenerator key = KeyGenerator.getInstance("HmacSHA256");
             SecretKey sk = key.generateKey();
@@ -54,7 +58,7 @@ public class jwtService {
             e.printStackTrace();
         }
     }
-    public static String generateToken(Users user) {
+    public static String generateToken(Users user) throws InvalidKeyException {
         Map<String,Object> claims = new HashMap<>();
     
         return Jwts.builder()
@@ -68,11 +72,35 @@ public class jwtService {
                     .compact();
     }
 
-    private static Key getkey() {
+    private static SecretKey getkey() {
 
         byte[] key = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(key);
 
     }
-    
+    public static String extractUsername(String token) {
+        return extractClaims(token, Claims::getSubject);
+    }
+    private static <T> T extractClaims(String token,Function<Claims,T> claimResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimResolver.apply(claims);
+    }
+    private static Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .verifyWith((SecretKey) getkey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+    }
+    public static  boolean validateToken(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+    }
+    private static boolean isTokenExpired(String token) {
+       return extractExpiration(token).before(new Date());
+    }
+    private static Date extractExpiration(String token) {
+        return extractClaims(token, Claims::getExpiration);
+    }
 }
