@@ -7,6 +7,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.practice.security.dtoModel.LoginRequest;
+import com.practice.security.dtoModel.RegisterRequest;
+import com.practice.security.dtoModel.ResponseDTO;
 import com.practice.security.model.Users;
 import com.practice.security.repository.UserRepo;
 
@@ -22,14 +25,20 @@ public class UserService {
     private JwtService jwtService;
 
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
-    public Users register(Users user){
-        user.setPassword(encoder.encode(user.getPassword()));
-        return repo.save(user);
+    public ResponseDTO register(RegisterRequest dto){
+        Users user = new Users();
+        user.setUsername(dto.getUsername());
+        user.setPassword(encoder.encode(dto.getPassword()));
+        Users saveduser = repo.save(user);
+        return new ResponseDTO(
+            saveduser.getId(),
+            saveduser.getUsername()
+        );
     }
-    public String verify(Users user) {
-        Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(),user.getPassword()));
+    public String verify(LoginRequest dto) {
+        Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(dto.getUsername(),dto.getPassword()));
         if(authentication.isAuthenticated()){
-            return jwtService.generateToken(user.getUsername());
+            return jwtService.generateToken(dto.getUsername());
         }else{
             return "fail";
 
